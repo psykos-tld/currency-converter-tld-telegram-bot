@@ -11,7 +11,6 @@ load_dotenv()
 cur_api = os.getenv("TOKEN_CURRENCY")
 converter = CurrencyConverter(cur_api)
 
-selected_language = 'en'
 
 async def lang(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -29,22 +28,23 @@ async def lang(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global selected_language
     query = update.callback_query
     await query.answer()
 
     selected_language = query.data  #either ru en cz
+    context.user_data['lang'] = selected_language
+
     await query.edit_message_text(languages[selected_language]['selected'])
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global selected_language
-    await update.message.reply_text(languages[selected_language]["help"], parse_mode='Markdown')
+    user_lang = context.user_data.get('lang', 'en')
+    await update.message.reply_text(languages[user_lang]["help"], parse_mode='Markdown')
 
 
 
 async def base(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global selected_language
+    user_lang = context.user_data.get('lang', 'en')
     users_text = update.message.text
     pattern = r'(\d+)\s*([A-Za-z]+)|([A-Za-z]+)\s*(\d+)'
     match = re.search(pattern, users_text)
@@ -60,4 +60,4 @@ async def base(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conversion_result = converter.convert(amount, base_currency)
         await update.message.reply_text(conversion_result)
     else:
-        await update.message.reply_text(languages[selected_language]['invalid_format'])
+        await update.message.reply_text(languages[user_lang]['invalid_format'])
